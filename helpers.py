@@ -23,6 +23,7 @@ class JPlayer:
         FOLDER_NAME = "songs" # Check that songs folder exists
         if not (os.path.exists(FOLDER_NAME) and os.path.isdir(FOLDER_NAME)):
             os.mkdir(FOLDER_NAME)
+            self.songs = []
         else:
             self.songs = [song for song in os.listdir(
                 'songs') if song.endswith('.mp3')]
@@ -75,7 +76,7 @@ def download(video_url):
             pass
         else:
             title = "Title"
-            
+        
         try:
             audio_stream = yt.streams.filter(
                 only_audio=True, file_extension='mp4').first()

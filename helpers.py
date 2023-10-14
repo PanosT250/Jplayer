@@ -76,13 +76,17 @@ def download(video_url):
         else:
             title = "Title"
             
-        audio_stream = yt.streams.filter(
-            only_audio=True, file_extension='mp4').first()
+        try:
+            audio_stream = yt.streams.filter(
+                only_audio=True, file_extension='mp4').first()
 
-        audio_stream.download(output_path='songs',
-                            filename=f'{title.capitalize()}.mp3')
-        
-        print(f"Successfully downloaded: {title}")
+            audio_stream.download(output_path='songs',
+                                filename=f'{title.capitalize()}.mp3')
+            
+            print(f"Successfully downloaded: {title}")
+        except exceptions.AgeRestrictedError:
+            print("Video is age restricted")
+            
         return 0
 
 

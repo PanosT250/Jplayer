@@ -1,14 +1,12 @@
 from Jplayer import Jplayer
-from helpers import play_next_in_queue
 
 def main():
     player = Jplayer()
+    print(len(player.songs))
 
     player.playNextSong()
-
-    print(f"Playing: {player.get_current_song()}")
-
     input()
+
 
     player.stop()
 

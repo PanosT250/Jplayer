@@ -1,3 +1,6 @@
 __pycache__/
 old/
 songs/
+backup/
+invalid_mp3s/
+.venv/

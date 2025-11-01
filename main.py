@@ -4,7 +4,9 @@ def main():
     player = Jplayer()
     print(len(player.songs))
 
-    player.playNextSong()
+    player.list_songs()
+
+    player.search_song(input())
     input()
 
 

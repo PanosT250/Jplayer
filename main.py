@@ -2,7 +2,6 @@ from Jplayer import Jplayer
 
 def main():
     player = Jplayer()
-    print(len(player.songs))
 
     player.list_songs()
 

@@ -13,19 +13,21 @@ class SongNotFoundError(Exception):
 
 class play_next_in_queue(I_play_next_song_strategy):
 
-    def get_next_song(self, player: I_player) -> str:
+    def get_next_song(self, player: I_player) -> int:
 
-        return player.songs.pop()
+        return player.current + 1 if player.current != None else 0
     
 class play_random_in_queue(I_play_next_song_strategy):
 
-    def get_next_song(self, player: I_player) -> str:
+    def get_next_song(self, player: I_player) -> int:
 
         idx = random.randrange(len(player.songs))
-        return player.songs.pop(idx)
+        return idx
     
 class play_selected_song(I_play_next_song_strategy):
 
+
+    # TODO: rework this
     input: str
     directory: str
 
@@ -34,7 +36,7 @@ class play_selected_song(I_play_next_song_strategy):
         self.input = input
         self.directory = directory
 
-    def get_next_song(self, player: I_player) -> str:
+    def get_next_song(self, player: I_player) -> int:
 
         idx = -1
 
@@ -48,12 +50,11 @@ class play_selected_song(I_play_next_song_strategy):
                     idx = i
                     break
         
-        if idx in range(len(player.songs)):
-            song = player.get_all_songs()[idx]
-            player.songs.remove(song)
+        if 0 <= idx < len(player.songs):
+            player.songs.insert(player.current or 0, player.songs[idx])
         else:
             raise SongNotFoundError(self.input)
 
         
-        return song
+        return idx
     

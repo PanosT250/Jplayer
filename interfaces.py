@@ -3,7 +3,13 @@ from typing import List, Optional
 
 
 class I_player(ABC):
-    current: str
+
+    @property
+    @abstractmethod
+    def current(self) -> Optional[int]:
+        """Index of current song""" 
+        pass
+
     songs: List[str]
 
     @abstractmethod
@@ -23,7 +29,7 @@ class I_player(ABC):
     
 class I_play_next_song_strategy(ABC):
     @abstractmethod
-    def get_next_song(self, player: I_player) -> str:
+    def get_next_song(self, player: I_player) -> int:
         pass
 
 class I_commmand_input_strategy(ABC):

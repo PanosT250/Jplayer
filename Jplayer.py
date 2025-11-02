@@ -13,32 +13,51 @@ class Jplayer(I_player):
     songs: List[str] = []
     song_selection_strategy: I_play_next_song_strategy
     playlistActive: bool = False
-    current: str
     playing: bool
     directory: str
+
+    @property
+    def current(self):
+        return self._current
+    
+    @current.setter
+    def current(self, value):
+        
+        self._current = value % len(self.songs)
 
     def __init__(self) -> None:
         # TODO: Load playlists
 
+        self._current = None
         mixer.init()
         # TODO: make this a separate module or class
-        self.directory = "./songs/"
+        self.directory = "./songs/testing/"
         self.load_all_songs(self.get_all_songs())
 
-        self.song_selection_strategy = play_next_in_queue()
+        self.song_selection_strategy = play_next_in_queue() # maybe change this through startup settings
 
-        # self.shuffle()
         self.playing = False
 
+        idx = self.song_selection_strategy.get_next_song(self)
+
+        self.load(idx)
+
     def play_next_song(self):
-        self.play_song(f"{self.song_selection_strategy.get_next_song(self)}")
+        self.load(self.song_selection_strategy.get_next_song(self))
+        self.play()
 
     def play(self):
         mixer.music.play()
-        self.playing = True
+        print(self.current)
+        if self.current != None:
+            print(f"Playing: {self.songs[self.current].removeprefix(self.directory)}")
+            self.playing = True
+        else:
+            raise ValueError("Player current song not set")
 
     def stop(self):
         mixer.stop()
+        print(f"Paused")
         self.playing = False
     
     def load_all_songs(self, songs) -> None:
@@ -63,18 +82,17 @@ class Jplayer(I_player):
         self.song_selection_strategy = play_next_in_queue()
         return False
     
-    def play_song(self, song):
-        mixer.music.load(f"{self.directory}{song}")
-        self.current = song
-        self.play()
-        print(f"Playing: {self.current.removeprefix(self.directory)}")
+    def load(self, idx):
+        self.current = idx
+        mixer.music.load(f"{self.directory}{self.songs[self.current]}")
     
     def search_song(self, input: str):
 
         self.stop()
 
         try:
-            self.play_song(play_selected_song(input, self.directory).get_next_song(self))
+            self.load(play_selected_song(input, self.directory).get_next_song(self))
+            self.play()
         except (SongNotFoundError) as e: 
             print(e)
 

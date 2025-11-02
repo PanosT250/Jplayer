@@ -15,6 +15,11 @@ class I_player(ABC):
     def stop(self) -> None:
         """Stop playback"""
         pass
+
+    @abstractmethod
+    def get_all_songs(self) -> List[str]:
+        """Get all songs"""
+        pass
     
 class I_play_next_song_strategy(ABC):
     @abstractmethod

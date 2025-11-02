@@ -49,10 +49,11 @@ class play_selected_song(I_play_next_song_strategy):
                     break
         
         if idx in range(len(player.songs)):
-            song = player.songs.pop(idx)
+            song = player.get_all_songs()[idx]
+            player.songs.remove(song)
         else:
             raise SongNotFoundError(self.input)
 
-        # returns just the song name without the directory
-        return f"{self.directory}{song}"
+        
+        return song
     

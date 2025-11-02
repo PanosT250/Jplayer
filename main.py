@@ -6,9 +6,11 @@ def main():
 
     player.list_songs()
 
-    player.search_song(input())
-    input()
+    in_str = ""
 
+    while in_str not in ["stop", "exit"]:
+        in_str = input("Enter command: ")
+        player.process_command(in_str)
 
     player.stop()
 

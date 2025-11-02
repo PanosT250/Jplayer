@@ -8,10 +8,13 @@ from helpers import play_next_in_queue, play_random_in_queue, play_selected_song
 
 
 class Jplayer(I_player):
+
+    # use this like a list to have prev commands
     songs: List[str] = []
     song_selection_strategy: I_play_next_song_strategy
     playlistActive: bool = False
     current: str
+    playing: bool
     directory: str
 
     def __init__(self) -> None:
@@ -24,27 +27,19 @@ class Jplayer(I_player):
 
         self.song_selection_strategy = play_next_in_queue()
 
-        self.shuffle()
-
-        # Test validity
-        # for s in self.songs:
-        #     if s.endswith("_fixed.mp3"):
-        #         mixer.music.load(s)
-        #         self.play()
-        #         mixer.music.unload()
-
-        # self.songs.sort()
-
-        # print(self.songs)
+        # self.shuffle()
+        self.playing = False
 
     def play_next_song(self):
-        self.play_song(self.song_selection_strategy.get_next_song(self))
+        self.play_song(f"{self.song_selection_strategy.get_next_song(self)}")
 
     def play(self):
         mixer.music.play()
+        self.playing = True
 
     def stop(self):
         mixer.stop()
+        self.playing = False
     
     def load_all_songs(self, songs) -> None:
         self.songs = songs
@@ -58,7 +53,6 @@ class Jplayer(I_player):
                 full_path = os.path.abspath(os.path.join(self.directory, f))
                 songs.append(os.path.basename(full_path))
 
-        songs.sort()
         return songs
 
     def shuffle(self) -> bool:
@@ -70,19 +64,61 @@ class Jplayer(I_player):
         return False
     
     def play_song(self, song):
-        mixer.music.load(song)
+        mixer.music.load(f"{self.directory}{song}")
         self.current = song
         self.play()
         print(f"Playing: {self.current.removeprefix(self.directory)}")
     
     def search_song(self, input: str):
 
+        self.stop()
+
         try:
             self.play_song(play_selected_song(input, self.directory).get_next_song(self))
         except (SongNotFoundError) as e: 
             print(e)
 
+    def list_songs(self, queue=False):
 
-    def list_songs(self):
-        for i, s in enumerate(self.get_all_songs()):
+        if not queue:
+            songs = self.get_all_songs()
+        else:
+            songs = self.songs
+
+        for i, s in enumerate(songs):
             print(f"{i}. {s}")
+
+    def process_command(self, in_str):
+
+        split_input = in_str.split(" ")
+        command = split_input[0]
+        args = split_input[1:]
+        has_args = len(args) > 0
+
+        if command in ["p"]:
+            self.play() if not self.playing else self.stop()
+        elif command in ["play"]:
+            self.play()
+        elif command in ["pause"]:
+            self.stop()
+        elif command in ["l", "list", "all", "ls"]:
+            if has_args and args[0] in ["queue", "q"]:
+                self.list_songs(queue=True)
+            else:
+                self.list_songs()
+
+        elif command in ["song", "search", "sn", "sname"]:
+
+            if has_args:
+                self.search_song(args[0])
+
+        elif command in ["shuffle"]:
+            print(f"Shuffle is {"on" if self.shuffle() else "off"}")
+
+        elif command in ["skip", "next"]:
+            self.play_next_song()
+
+        elif command in ["reload"]:
+            self.load_all_songs(self.get_all_songs())
+
+        #TODO: help, playlist, download, stream, voice operation enable/disable

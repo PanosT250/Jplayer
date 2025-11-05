@@ -1,4 +1,4 @@
-import os
+import os, json, sys
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
 from pygame import mixer
@@ -6,6 +6,37 @@ from typing import List
 from interfaces import I_play_next_song_strategy, I_commmand_input_strategy, I_player
 from helpers import play_next_in_queue, play_random_in_queue, play_selected_song, SongNotFoundError
 
+SETTINGS_FILE_NAME: str = "settings.json"
+DEFAULT_SETTINGS_FILE_NAME: str = "default_settings.json"
+
+
+
+def settings_dec(func):
+    def wrapper(*args, **kwargs):
+        if not os.path.exists(SETTINGS_FILE_NAME):
+            default_settings = open(DEFAULT_SETTINGS_FILE_NAME).read()
+            with open(SETTINGS_FILE_NAME, "w") as f:
+                f.write(default_settings)
+
+        func(*args, **kwargs)
+
+    return wrapper
+
+@settings_dec
+def change_setting(key: str, val):
+    try:
+        with open(SETTINGS_FILE_NAME, "r") as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        sys.exit("Settings file not found")
+
+    data[key] = val
+
+    # Save back to file
+    with open(SETTINGS_FILE_NAME, "w") as f:
+        json.dump(data, f, indent=4)
+
+    print(f"Set {key} = {val} in {SETTINGS_FILE_NAME}")
 
 class Jplayer(I_player):
 
@@ -25,14 +56,21 @@ class Jplayer(I_player):
         
         self._current = value % len(self.songs)
 
+    @settings_dec
+    def load_settings(self):
+        with open(SETTINGS_FILE_NAME, "r") as f:
+            data = json.load(f)
+            self.directory = data["directory"]
+
     def __init__(self) -> None:
         # TODO: Load playlists
+
+        self.load_settings()
 
         self._current = None
         mixer.init()
         # TODO: make this a separate module or class
-        self.directory = "./songs/testing/"
-        self.load_all_songs(self.get_all_songs())
+        self.load_songs(self.get_all_songs())
 
         self.song_selection_strategy = play_next_in_queue() # maybe change this through startup settings
 
@@ -60,7 +98,7 @@ class Jplayer(I_player):
         print(f"Paused")
         self.playing = False
     
-    def load_all_songs(self, songs) -> None:
+    def load_songs(self, songs) -> None:
         self.songs = songs
         
     def get_all_songs(self):
@@ -106,6 +144,15 @@ class Jplayer(I_player):
         for i, s in enumerate(songs):
             print(f"{i}. {s}")
 
+    def set_directory(self, dirname: str):
+        if os.path.isdir(dirname):
+            change_setting("directory", dirname)
+            self.directory = dirname
+            print(f"Directory is now: {self.directory}")
+            self.load_songs(self.get_all_songs())
+        else:
+            print("Invalid directory, path must begin from jplayer root")
+
     def process_command(self, in_str):
 
         split_input = in_str.split(" ")
@@ -137,6 +184,13 @@ class Jplayer(I_player):
             self.play_next_song()
 
         elif command in ["reload"]:
-            self.load_all_songs(self.get_all_songs())
+            self.load_songs(self.get_all_songs())
+
+        elif command in ["setdir", "directory", "dir"]:
+            if has_args:
+                self.set_directory(args[0])
+            else:
+                print("Please provide a valid directory, starting from jplayer root")
+
 
         #TODO: help, playlist, download, stream, voice operation enable/disable

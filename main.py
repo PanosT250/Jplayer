@@ -11,7 +11,5 @@ def main():
         in_str = input("Enter command: ")
         player.process_command(in_str)
 
-    player.stop()
-
 if __name__ == "__main__":
     main()

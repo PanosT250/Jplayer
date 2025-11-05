@@ -4,3 +4,4 @@ songs/
 backup/
 invalid_mp3s/
 .venv/
+settings.json

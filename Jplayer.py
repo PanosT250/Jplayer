@@ -46,6 +46,7 @@ class Jplayer(I_player):
     playlistActive: bool = False
     playing: bool
     directory: str
+    song_started: bool = False
 
     @property
     def current(self):
@@ -81,20 +82,28 @@ class Jplayer(I_player):
         self.load(idx)
 
     def play_next_song(self):
+        self.song_started = False
         self.load(self.song_selection_strategy.get_next_song(self))
         self.play()
 
+    def play_previous_song(self):
+        self.song_started = False
+        self.load((self.current or 0) - 1)
+        self.play()
+
     def play(self):
-        mixer.music.play()
-        print(self.current)
+        if not mixer.music.get_busy() and not self.song_started:
+            mixer.music.play()
+            self.song_started = True
+        mixer.music.unpause()
         if self.current != None:
             print(f"Playing: {self.songs[self.current].removeprefix(self.directory)}")
             self.playing = True
         else:
             raise ValueError("Player current song not set")
 
-    def stop(self):
-        mixer.stop()
+    def pause(self):
+        mixer.music.pause()
         print(f"Paused")
         self.playing = False
     
@@ -126,7 +135,7 @@ class Jplayer(I_player):
     
     def search_song(self, input: str):
 
-        self.stop()
+        self.pause()
 
         try:
             self.load(play_selected_song(input, self.directory).get_next_song(self))
@@ -161,11 +170,11 @@ class Jplayer(I_player):
         has_args = len(args) > 0
 
         if command in ["p"]:
-            self.play() if not self.playing else self.stop()
+            self.play() if not self.playing else self.pause()
         elif command in ["play"]:
             self.play()
         elif command in ["pause"]:
-            self.stop()
+            self.pause()
         elif command in ["l", "list", "all", "ls"]:
             if has_args and args[0] in ["queue", "q"]:
                 self.list_songs(queue=True)
@@ -182,6 +191,9 @@ class Jplayer(I_player):
 
         elif command in ["skip", "next"]:
             self.play_next_song()
+
+        elif command in ["prev", "previous", "skipb", "skipback"]:
+            self.play_previous_song()
 
         elif command in ["reload"]:
             self.load_songs(self.get_all_songs())

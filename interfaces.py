@@ -14,12 +14,12 @@ class I_player(ABC):
 
     @abstractmethod
     def play(self) -> None:
-        """Start playback"""
+        """Resume playback"""
         pass
 
     @abstractmethod
-    def stop(self) -> None:
-        """Stop playback"""
+    def pause(self) -> None:
+        """Pause playback"""
         pass
 
     @abstractmethod

@@ -6,7 +6,7 @@ class I_player(ABC):
 
     @property
     @abstractmethod
-    def current(self) -> Optional[int]:
+    def current(self) -> int:
         """Index of current song""" 
         pass
 
@@ -26,6 +26,11 @@ class I_player(ABC):
     def get_all_songs(self) -> List[str]:
         """Get all songs"""
         pass
+
+    @abstractmethod
+    def process_command(self, command: str, args: List[str] = []) -> None:
+        """Get all songs"""
+        pass
     
 class I_play_next_song_strategy(ABC):
     @abstractmethod
@@ -33,6 +38,8 @@ class I_play_next_song_strategy(ABC):
         pass
 
 class I_commmand_input_strategy(ABC):
+
+    player: I_player
     @abstractmethod
-    def get_command(self) -> str:
+    def listen_for_command(self) -> None:
         pass

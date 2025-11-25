@@ -1,15 +1,13 @@
-import os, json, sys
+import os, json, sys, random
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
 from pygame import mixer
 from typing import List
-from interfaces import I_play_next_song_strategy, I_commmand_input_strategy, I_player
-from helpers import play_next_in_queue, play_random_in_queue, play_selected_song, SongNotFoundError
+from interfaces import I_play_next_song_strategy, I_player
+from helpers import play_next_in_queue, SongNotFoundError, terminal_command_processor, play_selected_song
 
 SETTINGS_FILE_NAME: str = "settings.json"
 DEFAULT_SETTINGS_FILE_NAME: str = "default_settings.json"
-
-
 
 def settings_dec(func):
     def wrapper(*args, **kwargs):
@@ -46,7 +44,6 @@ class Jplayer(I_player):
     playlistActive: bool = False
     playing: bool
     directory: str
-    song_started: bool = False
 
     @property
     def current(self):
@@ -54,7 +51,7 @@ class Jplayer(I_player):
     
     @current.setter
     def current(self, value):
-        
+
         self._current = value % len(self.songs)
 
     @settings_dec
@@ -68,7 +65,7 @@ class Jplayer(I_player):
 
         self.load_settings()
 
-        self._current = None
+        self._current = 0
         mixer.init()
         # TODO: make this a separate module or class
         self.load_songs(self.get_all_songs())
@@ -77,26 +74,21 @@ class Jplayer(I_player):
 
         self.playing = False
 
-        idx = self.song_selection_strategy.get_next_song(self)
+        idx = 0
 
         self.load(idx)
 
     def play_next_song(self):
-        self.song_started = False
         self.load(self.song_selection_strategy.get_next_song(self))
         self.play()
 
     def play_previous_song(self):
-        self.song_started = False
         self.load((self.current or 0) - 1)
         self.play()
 
     def play(self):
-        if not mixer.music.get_busy() and not self.song_started:
-            mixer.music.play()
-            self.song_started = True
-        mixer.music.unpause()
-        if self.current != None:
+        mixer.music.play()
+        if self.current is not None:
             print(f"Playing: {self.songs[self.current].removeprefix(self.directory)}")
             self.playing = True
         else:
@@ -121,13 +113,19 @@ class Jplayer(I_player):
 
         return songs
 
-    def shuffle(self) -> bool:
-        if isinstance(self.song_selection_strategy, play_next_in_queue):
-            self.song_selection_strategy = play_random_in_queue()
-            return True
+    def shuffle(self):
+        # if isinstance(self.song_selection_strategy, play_next_in_queue):
+        #     self.song_selection_strategy = play_random_in_queue()
+        #     return True
         
-        self.song_selection_strategy = play_next_in_queue()
-        return False
+        # self.song_selection_strategy = play_next_in_queue()
+        # return False
+        random.shuffle(self.songs)
+        self.current = 0
+
+        # Refresh queue iterator, songs changed order
+        self.load(self.current)
+        self.play()
     
     def load(self, idx):
         self.current = idx
@@ -143,7 +141,7 @@ class Jplayer(I_player):
         except (SongNotFoundError) as e: 
             print(e)
 
-    def list_songs(self, queue=False):
+    def list_songs(self, queue=True):
 
         if not queue:
             songs = self.get_all_songs()
@@ -160,13 +158,16 @@ class Jplayer(I_player):
             print(f"Directory is now: {self.directory}")
             self.load_songs(self.get_all_songs())
         else:
-            print("Invalid directory, path must begin from jplayer root")
+            print("Invalid directory, path must begin from jplayer root")\
+            
+    def listen_for_command(self):
+        try:
+            terminal_command_processor(self).listen_for_command()
+        except KeyboardInterrupt:
+            sys.exit("\nGoodbye!")
 
-    def process_command(self, in_str):
+    def process_command(self, command, args = []):
 
-        split_input = in_str.split(" ")
-        command = split_input[0]
-        args = split_input[1:]
         has_args = len(args) > 0
 
         if command in ["p"]:
@@ -176,8 +177,8 @@ class Jplayer(I_player):
         elif command in ["pause"]:
             self.pause()
         elif command in ["l", "list", "all", "ls"]:
-            if has_args and args[0] in ["queue", "q"]:
-                self.list_songs(queue=True)
+            if has_args and args[0] in ["all", "a", "*"]:
+                self.list_songs(queue=False)
             else:
                 self.list_songs()
 
@@ -187,7 +188,9 @@ class Jplayer(I_player):
                 self.search_song(args[0])
 
         elif command in ["shuffle"]:
-            print(f"Shuffle is {"on" if self.shuffle() else "off"}")
+            # print(f"Shuffle is {"on" if self.shuffle() else "off"}")
+            print("Shuffling queue")
+            self.shuffle()
 
         elif command in ["skip", "next"]:
             self.play_next_song()

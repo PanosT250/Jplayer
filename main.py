@@ -1,15 +1,14 @@
 from Jplayer import Jplayer
+import threading
+from helpers import audio_event_processor
 
 def main():
     player = Jplayer()
 
     player.list_songs()
 
-    in_str = ""
-
-    while in_str not in ["stop", "exit"]:
-        in_str = input("Enter command: ")
-        player.process_command(in_str)
+    player.listen_for_command()
+    
 
 if __name__ == "__main__":
     main()
